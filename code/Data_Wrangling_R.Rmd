@@ -1,0 +1,673 @@
+---
+title: "Code Maktaba : Data Wrangling In R"
+author: "Fridah Wanjala, M-Kopa Solar"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    theme: readable
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+---
+
+# House keeping
+## About me
+
+  * Studied statistics
+  * Currently working at M-kopa Solar - 2 Weeks old
+  * Was previously a Lead data analyst at Busara Centre For Behavioural Economics
+  * I used R most of the time.
+  * A typical day entails SQL, drafting and implementing analysis strategies to solve business problems, R, meeting with stakeholders
+  * Who is a data scientist?
+
+## Objectives of the workshop
+Data wrangling - all the activities that transform data into a format ready for analysis. We will cover some of these activities and hope by the end of the session:
+
+  *	Learn how to subset different R objects and the different ways this can be achieved.
+  *	Understand data control structures and how to implement them in R
+  *	Learn how to handle repetitive tasks using loops and the apply family of functions.
+
+This workshop assumes that
+  * You basic knowldge of R
+  * Navigate RStudio (both R and Rstudio)
+  * Understand the different data structures - we will have recap of this.
+  * Understand the different data types in R, i.e, string/character, numeric, logical, factor/categorical.
+
+## Important things to note.
+
+* Pleasse download the data we will use via the link on the white board.
+* Feel free to ask questions during the session. Raise your hand and one of the team members will come over to assist.
+* For each segment, I will show how to approach each problem using base R and using packages(?)
+* At the end of each segment, there will be an exercise.
+
+# Introduction
+A business problem that requires a data solution has to under a series of stages.
+
+* Define the goal of the project.
+* Collect relevant data.
+*	**Prepare the data for analysis.**
+*	Analyze the cleaned data.
+* Communicate the findings
+
+Once you get the data;
+
+* Create a directory for your project
+* Create sub-directories to hold `data` and `code` within the main directory. Place your data inside the `data` directory.
+* Create an R project. 
+* Choose to  either do a R script, R Markdown, R slides etc. In this session let's use an R script.
+
+First, we will load the packages required packages. 
+```{r setup, include=FALSE}
+#-----------------------------------------------------
+# 0. Set the working environment
+#-----------------------------------------------------
+# Install packages
+# install.packages("dplyr", repos='http://cran.us.r-project.org', )
+# install.packages("purrr", repos='http://cran.us.r-project.org')
+# install.packages("readxl", repos='http://cran.us.r-project.org')
+
+# Load packages
+library("dplyr")
+library("purrr")
+require("readxl")
+
+```
+
+# First session : Subsetting
+The goal of subsetting to extract/access specific data within an R object. There are two ways of subsetting, that is
+
+* Using indices - position of elements starting from R
+* Using logical operations [TRUE/FALSE]
+* Using names of the objects
+
+## Recap on data structures
+We will recap on vectors and lists and show case how to subset.
+
+### Vectors
+One dimensional object
+```{r}
+# Define a character vector
+age <- c(22,56,23,45,12)
+names <- c("Jane", "Joyce", "Jenny", "Jeff", "John")
+names(age) <- names
+
+# i. Using indices
+age[2]
+age[1:3]
+age[c(1,4)]
+
+# ii. Using names
+age["Jeff"]
+
+# iii. Using logical operators
+age[age<=50]
+
+# One can also use negative indices to drop
+age[-1]
+
+```
+
+### Lists
+Generic vector that holds different objects e.g vectors, other lists, data frames
+
+* List with no names
+```{r}
+## Define a list with no names
+list0 <- list(c(23,45,67,89), c("orange", "apples", "mangoes", "bananas"), iris)
+
+# Extract elements from the list using indices
+list0[[1]]
+
+```
+
+* Named list
+```{r}
+## Define a list with no names
+named_list <- list(age = c(23,45,67,89), fruits = c("orange", "apples", "mangoes", "bananas"), data = iris)
+
+# Extract elents from the list using indices
+named_list["fruits"] # Output a list
+named_list[["fruits"]] # Outputs a vector
+
+```
+
+## Subsetting dataframes
+Dataframes  - two dimensional objects where rows are observations and columns are variables. 
+
+Below is a glimpse of the data we will use in today's session. It was collected from some insurance company's marketing campaign. The goal was to understand how different customers react to different marketing strategies.
+
+The pipe operator (`%>%`) allows you to structure sequences of operations.
+
+```{r}
+# Import the dataset
+bank_df <- read_excel("data/Marketing-Customer-Value-Analysis-Merged.xlsx")
+
+# Structure of the dataset
+bank_df %>% glimpse()
+str(bank_df)
+
+# This is the same as
+glimpse(bank_df)
+```
+
+### Subsetting data frame columns.
+Here the goal is to keep or drop specific columns.
+
+We will demonstrate how to do this using Base R and the `dplyr` package. The dplyr package has a nice verb called `select` that we will use to accompissh this.
+
+#### Selecting one column
+Suppose we would like to keep the `Location Code` column
+```{r}
+# Using base R (two ways)
+location_code1 <- bank_df$`Location Code`
+location_code2 <- bank_df[, "Location Code"]
+location_code3 <- bank_df[, 11]
+
+# Using dplyr
+location_code1 <- bank_df %>% select(`Location Code`)
+location_code2 <- bank_df %>% pull(`Location Code`)
+
+# You can also supply the variables as quoted strings
+location_code1 <- bank_df %>% select("Location Code")
+location_code2 <- bank_df %>% pull("Location Code")
+
+```
+
+#### Selecting multiple columns
+For base R, we cannot use the $ sign
+For dplyr, we cannot use the `pull` function
+```{r}
+# Using base R (two ways)
+output1 <- bank_df[, c("Location Code", "Total Claim Amount")]
+output2 <- bank_df[, c(11, 21)]
+
+# Using dplyr
+output2 <- bank_df %>% select(`Location Code`, `Total Claim Amount`)
+
+# You can also supply the variables as quoted strings
+output2 <- bank_df %>% select("Location Code", "Total Claim Amount")
+
+# You also place the variables in a vector and supply the vector to the select statement
+variables_to_select <- c("Location Code", "Total Claim Amount")
+output2 <- bank_df %>% select(variables_to_select)
+
+```
+
+
+#### Selecting using helper functions
+The following select helpers are from the `tidyselect` package:
+1. starts_with(): Starts with a prefix.
+2. ends_with(): Ends with a suffix.
+3. contains(): Contains a literal string.
+4. everything(): Matches all variables.
+5. last_col(): Select last variable, possibly with an offset.
+
+```{r}
+# Variables starting with "month"
+starts <- bank_df %>% select(starts_with("month"))
+
+# Variables ending with "type" 
+end <- bank_df %>% select(ends_with("type"))
+
+# Variable containing a string "since"
+contain <- bank_df %>% select(contains("since"))
+
+# Select the third last column
+last <- bank_df %>% select(last_col(offset = 2))
+
+```
+
+#### Select using logical expressions
+This uses the `select_if` statement in combination with wrappers such as `is_numeric`, `is.character` etc.
+```{r}
+## Select columns of type character
+char_data <- bank_df %>%
+  select_if(is.character)
+
+```
+
+There are several other variants of the `select` verb such as `select_at`, among others. I have attached a resource from which you learn about them.
+
+### Subsetting rows
+Here, the goal is to keep rows that are of interest e.g Keep non-missing rows.
+
+We will use the `filter` function from the `dplyr` package. I will also show the base R equivalent.
+
+#### Scenario 1 : Filter numeric columns
+The most common operators are [>, >=, <, <=, == and !=] - Relational operators
+Example: Keep rows where income is larger than 0
+
+* First, explore the income column
+```{r}
+summary(bank_df$Income)
+```
+
+* Drop those with zero income
+```{r}
+# Drop those with zero income
+out <- bank_df %>% filter(Income > 0)
+
+# Distribution
+summary(out$Income)
+
+```
+
+* Using base R
+
+```{r}
+# Drop those with zero income
+out <- bank_df[bank_df$Income > 0, ]
+
+# Distribution
+summary(out$Income)
+
+```
+
+* Values within a specified range
+You can use functions such as `between` to accomplish this.
+Example : Filter those with incomes that lie between 20,000 and 30,000 (both inclusive)
+
+Using the `between` function
+```{r}
+# Filter
+out <- bank_df %>%
+  filter(between(Income, 20000, 30000))
+
+# Distribution
+summary(out$Income)
+
+```
+
+Using `base R`
+```{r}
+# Filter
+out <- bank_df[between(bank_df$Income, 20000, 30000), ]
+
+# Distribution
+summary(out$Income)
+
+```
+
+#### Subsetting character columns
+We will use the `Vehicle Class` column to demonstrate this
+
+```{r}
+unique(bank_df$`Vehicle Class`)
+```
+
+* Exact character match
+```{r}
+# Keep vehicles of class 'Sports Car'
+out <- bank_df %>%
+  filter(`Vehicle Class` == "Sports Car")
+
+# Distribution
+unique(out$`Vehicle Class`)
+
+```
+
+* More than one vehicle class
+We can use the match operator (`%in%`) to accomplish this.
+Example : Keep vehicles of the following classes [Two-Door Car and Four-Door Car]
+
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(`Vehicle Class` %in% c("Two-Door Car", "Four-Door Car"))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+Suppose we want to eliminate the two car classes from the data. 
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(!`Vehicle Class` %in% c("Two-Door Car", "Four-Door Car"))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+* Using pattern matching functions.
+These are `grepl` from base R and `str_detect` from `stringr` package.
+
+First, find out the what is common between the groups you want to filter. In our case, the phrase `door` is common. 
+
+The functions will evaluate to boolean value (TRUE and FALSE) where rows with a TRUE value will be filtered.
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(grepl("door", `Vehicle Class`, ignore.case = T))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+#### Other filter extensions
+* Suppose you have multiple conditions
+Example 1: Keep those with more than two policies and have a `Sports` car [AND].
+
+```{r}
+# Keep vehicles of class 'Sports Car'
+out <- bank_df %>%
+  filter(`Vehicle Class` == "Sports Car", `Number of Policies` > 2)
+
+# Distribution
+unique(out$`Vehicle Class`)
+summary(out$`Number of Policies`)
+```
+
+Example 2 : Keep those with more than two policies or are male
+```{r}
+# Keep vehicles of class 'Sports Car'
+out <- bank_df %>%
+  filter(`Number of Policies` > 2 | Gender == "F")
+
+# Distribution
+unique(out$Gender)
+summary(out$`Number of Policies`)
+```
+
+
+* Filtering across multiple columns.
+Theare are several variants to the `filter` function that allow you to filter across multiple columns in one go.
+
+ + `filter_all()` : filter all columns based on certain conditions.
+ + `filter_if()` : use a function that returns a boolean to indicate which columns to filter on. 
+ + `filter_at()` : specify columns inside a vars() helper for which the filtering will be done.
+
+We will demostrate how to use the `filter_if` function only. I have attached some resources with which you can learn 
+
+Example : Filter numeric columns where all the variables have values above 4
+```{r}
+out <- bank_df %>%
+  filter_if(is.numeric, all_vars(. > 4))
+
+out
+
+```
+
+The `all_vars` is a wrapper equivalent to the AND logical operator. The equivalent for the OR operator is the `any_vars` wrapper.
+
+
+## Exercise
+We will use the marketing data set.
+1. Using the `Response` column, select all rows where the response is `Yes`
+```{r}
+
+```
+
+2. Filter customers who are employed (`EmploymentStatus` = `Employed`) with an Income (`Income`) between 40,000 and 50,000
+```{r}
+
+```
+
+3. Select all columns that start with an `e`
+
+```{r}
+
+```
+
+
+Please take atmost 10 minutes to try this out. You can work individually or in a group.
+
+
+# Second session : Conditional statements
+These are statements that control the flow of the analysis. That is, they determine if a certain condition is met or not, then perform a set of analysis depending on whether a condition is met or not.
+
+Below are examples of common conditional statements.
+
+* `if() {}` : Executes a set of statement(s) when condition is met
+* `if() {} else {}` : Executes statement 1 if a condition met; if not executes statement 2
+* `ifelse()` : Execute statement 1 if condition met; if not execute statement 2
+* `which()` : Find elements in an object that meet condition
+
+Let's try out some examples to showcase their differences. 
+
+## The `if {} and if() {} else {}` statement
+Suppose you you would like to perform some operation only when some condition is met, say, 
+
+1. If a number is greater than or equal 10, compute the square root
+2. Else print out a message [The number is less than 10, no computation]
+
+```{r}
+# Define a variable x
+x <- 9
+
+# Apply your protocol
+if(x > 10){
+  sqrt(x)
+} else {
+  print("The number is less than 10, no computation")
+}
+
+```
+
+Note :  This should only be used in a single element not a vector. 
+
+Use case : package installation.
+
+```{r}
+# Vector of required packages
+pkgs <- c("tidyverse", "glue", "tools", "lubridate", "readxl", "DBI", "aml")
+
+# Installed packages
+installed <- installed.packages()[, 1]
+
+# Create vector of missing packages
+miss_pkgs <- pkgs[!pkgs %in% installed] 
+
+# Install the missing packages
+if(length(miss_pkgs)>0){
+  install.packages(miss_pkgs, dependencies = TRUE, repos = "http://cran.us.r-project.org")
+}
+
+```
+
+## The ifelse stament
+Structure of an `ifelse` statements
+```
+ifelse(Condition, Statement1, Statement2)
+```
+Note : Good news -it can be applied on vectors. This means we can use this function to create new variables and add to a dataframe.
+
+Example :  Let's group the `Number of Open Complaints` into two categories,  that is `No complaints` and `At least one complaint`. Let's call this new variable : `Complaints_category` 
+
+Method 1 : Using Base R
+```{r}
+# Create the variable
+bank_df$Complaints_category <- ifelse(bank_df$`Number of Open Complaints` == 0, "No complaints", "At least one complaint")
+
+# Distribution of the original and new variable
+table(bank_df$`Number of Open Complaints`)
+table(bank_df$Complaints_category)
+
+```
+
+
+Method 2 :  Using dplyr's `mutate` verb
+```{r}
+# Functions within dplyr package
+help(package = "dplyr")
+
+# Create the variable
+bank_df <- bank_df %>%
+  mutate(Complaints_category2 = ifelse(`Number of Open Complaints` == 0, "No complaints", "At least one complaint"))
+
+# Distribution of the original and new variable
+table(bank_df$`Number of Open Complaints`)
+table(bank_df$Complaints_category2)
+```
+
+## The which statement
+The `which(condition)` retuns the row number of the object that meets a condition.
+
+```{r}
+# Vector of say, weight of children
+weight <- c(5,12,14,15,17, 10, 11)
+
+# Find indices where weight > 13
+which(weight > 13)
+
+# Extract weights greater than 13
+weight[which(weight > 13)]
+
+# Variants of the which function
+weight[which.max(weight)]
+weight[which.min(weight)]
+```
+
+## Exercise
+Using the marketing dataset
+1. Create a new variable `Income_category` using the following protocol:
+Income = 0 "No Income"
+Income = between 1 and 50,000 "1 to 50000"
+Income > 50000 "> 50000"
+HINT :  Use nested `ifelse`
+
+# Third seccion : Loops and the apply family
+## Loops
+A loop provides a framework for performing repeated operations without having to change the parameters of the statement. 
+
+Examples of repeated operations.
+1. Reading in a bunch of csv/excel or any other type of file.
+2. You want to call a function but you have lots of inputs. A function is a set of instructions to carry out a specific task. It has an input and output.
+
+The number of times a loop runs is determined by start and stop conditions. Below is the structure of a loop.
+
+```
+for(i in 1:4){
+  Statements()
+}
+```
+
+Where:
+i : is the counter/placeholder
+1 : start
+4 : stop
+
+Example : Suppose we want to import data from an a Excel workbook with several sheets such that you can only import one sheet at a time.
+
+Step 1 : Pick the package and function you will use.
+```
+Package : readxl
+Function : read_excel
+```
+Step 2: Create vector of sheet names with a meaningful name. We will calls ours [`sheets`]. This is what we will loop over.
+
+```{r}
+## Vector of sheets 
+(data_sheets <- excel_sheets(path = "data/Several_datasets.xlsx"))
+
+```
+
+Step 3 :  Test the import function by importing data from one worksheet. This is the code that wll be run in every iteration.
+```{r}
+first_df <- read_excel(path = "data/Several_datasets.xlsx", sheet = "starwars")
+```
+
+Step 4: Create an empty list that will be used to store the imported datasets
+
+```{r}
+datasets <- list()
+```
+
+Step 5: Write the loop. There are different ways to create the looping index: 
+(i) Could be numueric index
+
+```{r}
+# Define space for the output
+datasets_index <- list()
+
+# Import from different sheets
+for(i in 1:length(data_sheets)){
+  datasets_index[[i]] <- read_excel(path = "data/Several_datasets.xlsx", sheet = data_sheets[i])
+}
+
+# Extract the datasets from the list - one needs to remmember the order of the sheets
+ChickWeight <- datasets_index[[i]]
+
+```
+
+(ii) Character index
+
+```{r}
+datasets_chr <- list()
+
+for(sht in data_sheets){
+  datasets_chr[[sht]] <- read_excel(path = "data/Several_datasets.xlsx", sheet = sht)
+}
+
+ChickWeight <- datasets_chr[["ChickWeight"]]
+```
+
+## Apply family of functions
+Instead of using loops, one can use some the `apply()` family of functions. These are functions that can take in an input vector, array or matrix and apply a function with one or several arguments.
+
+There are several apply functions such as apply, lapply, sapply, mapply etc, but we will only talk about the two most common. They are all R base functions.
+
+Don't worry if you don't understand them today. It took me some prcatice to actually master them. You will get there if you do the same.
+
+* `apply()` - this is the godfather and takes in matrices/dataframes as input. It is structured as `apply(x, margin, FUN)`. For example,to calculate the means of all the column of the `mtcars` dataset (this is an inbuilt R dataset)
+```{r}
+# First we load the data
+data(mtcars)
+
+# Calculate the mean
+apply(X = mtcars, MARGIN = 2, FUN = mean)
+
+```
+
+* `lapply()` - This applies a function over a list or vector, then outputs a list. Using the previous example of importing datasets, we can use lapply as an alternative to the loop. It is strucutred as follows: `lapply(X, FUN)`
+
+```{r}
+# We will pass a vector of data sheet names over the read_excel function 
+lapply_lst <- lapply(X = data_sheets, FUN = function(x) read_excel(path = "data/Several_datasets.xlsx", sheet = x))
+
+```
+
+
+## The purrr package map functions
+The map functions are also alternative toloops and iteratively apply a list or a vector to a function. The functions are:
+* `map(x, f)` :  applies a function to each element of a list or vector. This requires a one-argument function. Using our previous example, we can use the map function to iterate over the sheets and importthe data.
+
+```{r}
+# Methdd 1:
+map_lst1 = map(.x = data_sheets, .f = function(x) read_excel(path = "data/Several_datasets.xlsx",
+                                                             sheet = x))
+
+# Method 2 : Uisng the pipe operatoe
+map_lst2 <- data_sheets %>%
+  map(~ read_excel(path = "data/Several_datasets.xlsx", sheet = .))
+  
+```
+
+* map2 and pmap :  Same as map but require a function with 2 and more arguments. We will not go into the details now since it will be discussed in  future session.
+
+## Exercise.
+1. Write a loop that calculates the mean, median and standard deviation of the following numeric variables (Income, Total Claim Amount, Customer Lifetime Value) and saves the 3 outputs in a list. Hint .  Use the `pull` function from the `dplyr` package to extract the variables.
+
+2. Below is a function that takes in a variable name and ouputs its data type. Use `lapply` or `map` to apply function to all the column names in the marketing dataset. First run in function within your R workspace.
+
+```
+classes <- function(x){
+  return(typeof(bank_df %>% pull(x)))
+}
+```
+
+
+# Closing remarks // Remarks
+
+* Hope you have enjoyed and learnt a lot.
+* Thanks for coming
+* R requires practice. Take a problem and try to solve it with R. Publish it on rpubs, github pages, Medium so that the community can grow.
+* Offer to train in some of the meetups.
+* Follow data science groups and individuals on LinkedIn, Twitter.
+
+# Resources
+
+1. [Variants of the filter verb](https://dplyr.tidyverse.org/reference/filter_all.html)
+2. [Susan Baert's blog](https://suzanbaert.netlify.com/2018/01/dplyr-tutorial-1/)
