@@ -30,16 +30,8 @@ df <- bank_df %>%
 cols <- bank_df %>%
   select(starts_with("E"))
 
-
-
-
-
-
-
-
-
 #----------------------------
-# 1. Second Exercise
+# 2. Second Exercise
 #----------------------------
 # 1. Create a new variable `Income_category` using the following protocol:
 #   Income = 0 "No Income"
@@ -48,11 +40,15 @@ cols <- bank_df %>%
 #   HINT :  Use nested `ifelse`
 
 #----------------------------
-# 1. Third Exercise
+# 3. Third Exercise
 #----------------------------
-# 1. Write a loop that calculates the mean, median and standard deviation of the following numeric variables (Income, Total Claim Amount, Customer Lifetime Value) and saves the 3 outputs in a list. Hint .  Use the `pull` function from the `dplyr` package to extract the variables.
+# 1. Calaculate a row sum using the mtcars dataset
 
-# 2. Below is a function that takes in a variable name and ouputs its data type. Use `lapply` or `map` to apply function to all the column names in the marketing dataset. First run in function within your R workspace.
+
+# 2. Write a loop that calculates the mean, median and standard deviation of the following numeric variables (Income, Total Claim Amount, Customer Lifetime Value) and saves the 3 outputs in a list. Hint .  Use the `pull` function from the `dplyr` package to extract the variables.
+
+
+# 3. Below is a function that takes in a variable name and ouputs its data type. Use `lapply` or `map` to apply function to all the column names in the marketing dataset. First run in function within your R workspace.
 # classes <- function(x){
 #   return(typeof(bank_df %>% pull(x)))
 # }
