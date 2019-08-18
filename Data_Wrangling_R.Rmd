@@ -1,5 +1,5 @@
 ---
-title: "Code Maktaba : Data Wrangling In R 2.0"
+title: "Code Maktaba : Data Wrangling In R"
 author: "Fridah Wanjala, M-Kopa Solar"
 date: "`r Sys.Date()`"
 output:
@@ -16,44 +16,34 @@ output:
 ## About me
   * Studied statistics
   * Currently working at M-kopa Solar
-  * I used R most of the time.
+  * I use R most of the time.
   * A typical day entails SQL, drafting and implementing analysis strategies to solve business problems, R, meeting with stakeholders
 
 ## Objectives of the workshop
-Data wrangling - all the activities that transform data into a format ready for analysis. 
+Data wrangling - all the activities that transform data into a format ready for analysis. We will cover some of these activities and hope by the end of the session:
 
-We will cover some of these activities and hope by the end of the session:
-
+  *	Learn how to subset different R objects and the different ways this can be achieved.
   *	Understand data control structures and how to implement them in R
   *	Learn how to handle repetitive tasks using loops and the apply family of functions.
-  
-In the last session we learnt ;
 
-  * Data structures in R e.g vectors, lists, dataframes.
-  * How to subset vectors and lists using indices and character names
-  * We also learnt how to subset data frames using the `select` and `filter` functions and their variations from the `dplyr` package.
-  * We also learnt how to create an R workfows using RStudio projects
+This workshop assumes that
+  * You have basic knowledge of R
+  * Navigate RStudio (both R and Rstudio)
+  * Understand the different data structures - we will have recap of this.
+  * Understand the different data types in R, i.e, string/character, numeric, logical, factor/categorical.
+  * You can import data into R
   
 ### House keeping
 Before we begin:
   * Create a folder - give it a name of your choice. Within it create a subfolder : `data`
   * Download two datasets and scripts from the link provided on the board.
   * Place the data in the data folder and scripts in the main folder.
-  * Creat an R project. This will be saved with a .Rproj extension. Alaways use R projects to manage your workflow.
-
-This workshop assumes that
-  * You basic knowldge of R
-  * Navigate RStudio (both R and Rstudio)
-  * Understand the different data structures
-  * Understand the different data types in R, i.e, string/character, numeric, logical, factor/categorical.
-  * You can import data into R
-  * You can create a new script or open the RMarkdown files you have downloaded
-  * We are now set, any questions?
+  * Creat an R project. This will be saved with a .Rproj extension. Always use R projects to manage your workflow.
 
 ## Important things to note.
 
 * Feel free to ask questions during the session. Raise your hand and one of the team members will come over to assist.
-* At the end of each segment, there will be an exercise where you will be given atleast 10 minutes to work on it.
+* At the end of each segment, there will be an exercise in which you will be given atleast 10 minutes to work on it.
 
 # Introduction
 A business problem that requires a data solution has to under a series of stages.
@@ -100,42 +90,346 @@ glimpse(bank_df)
 
 ```
 
-## Recap
-### Subsetting data frame columns.
-Here the goal is to keep or drop specific columns. We will use the `select` function from dplyr.
+# First session : Subsetting
+The goal of subsetting to extract/access specific data within an R object. There are two ways of subsetting, that is
+
+* Using indices - position of elements starting from R
+* Using logical operations [TRUE/FALSE]
+* Using names of the objects
+
+## Recap on data structures
+We will recap on vectors and lists and show case how to subset.
+
+### Vectors
+One dimensional object
+```{r}
+# Define a character vector
+age <- c(22,56,23,45,12)
+names <- c("Jane", "Joyce", "Jenny", "Jeff", "John")
+names(age) <- names
+
+# i. Using indices
+age[2]
+age[1:3]
+age[c(1,4)]
+
+# ii. Using names
+age["Jeff"]
+
+# iii. Using logical operators
+age[age<=50]
+
+# One can also use negative indices to drop
+age[-1]
+
+```
+
+### Lists
+Generic vector that holds different objects e.g vectors, other lists, data frames
+
+* List with no names
+```{r}
+## Define a list with no names
+list0 <- list(c(23,45,67,89), c("orange", "apples", "mangoes", "bananas"), iris)
+
+# Extract elements from the list using indices
+list0[[1]]
+
+```
+
+* Named list
+```{r}
+## Define a list with no names
+named_list <- list(age = c(23,45,67,89), fruits = c("orange", "apples", "mangoes", "bananas"), data = iris)
+
+# Extract elents from the list using indices
+named_list["fruits"] # Output a list
+named_list[["fruits"]] # Outputs a vector
+
+```
+
+## Subsetting dataframes
+Dataframes  - two dimensional objects where rows are observations and columns are variables. 
+
+Below is a glimpse of the data we will use in today's session. It was collected from some insurance company's marketing campaign. The goal was to understand how different customers react to different marketing strategies.
+
+The pipe operator (`%>%`) allows you to structure sequences of operations.
 
 ```{r}
-# Selecting one column
+# Import the dataset
+bank_df <- read_excel("data/Marketing-Customer-Value-Analysis-Merged.xlsx")
+
+# Structure of the dataset
+bank_df %>% glimpse()
+str(bank_df)
+
+# This is the same as
+glimpse(bank_df)
+```
+
+### Subsetting data frame columns.
+Here the goal is to keep or drop specific columns.
+
+We will demonstrate how to do this using Base R and the `dplyr` package. The dplyr package has a nice verb called `select` that we will use to accompissh this.
+
+#### Selecting one column
+Suppose we would like to keep the `Location Code` column
+```{r}
+# Using base R (two ways)
+location_code1 <- bank_df$`Location Code`
+location_code2 <- bank_df[, "Location Code"]
+location_code3 <- bank_df[, 11]
+
+# Using dplyr
 location_code1 <- bank_df %>% select(`Location Code`)
 location_code2 <- bank_df %>% pull(`Location Code`)
 
-# Selecting several columns
-output2 <- bank_df %>% select(`Location Code`, `Total Claim Amount`)
+# You can also supply the variables as quoted strings
+location_code1 <- bank_df %>% select("Location Code")
+location_code2 <- bank_df %>% pull("Location Code")
 
 ```
 
-### Subsetting rows
-Here, the goal is to keep/drop rows that are of interest e.g Keep non-missing rows.
+#### Selecting multiple columns
+For base R, we cannot use the $ sign
+For dplyr, we cannot use the `pull` function
+```{r}
+# Using base R (two ways)
+output1 <- bank_df[, c("Location Code", "Total Claim Amount")]
+output2 <- bank_df[, c(11, 21)]
 
-We will use the `filter` function from the `dplyr` package. 
+# Using dplyr
+output2 <- bank_df %>% select(`Location Code`, `Total Claim Amount`)
+
+# You can also supply the variables as quoted strings
+output2 <- bank_df %>% select("Location Code", "Total Claim Amount")
+
+# You also place the variables in a vector and supply the vector to the select statement
+variables_to_select <- c("Location Code", "Total Claim Amount")
+output2 <- bank_df %>% select(variables_to_select)
+
+```
+
+
+#### Selecting using helper functions
+The following select helpers are from the `tidyselect` package:
+1. starts_with(): Starts with a prefix.
+2. ends_with(): Ends with a suffix.
+3. contains(): Contains a literal string.
+4. everything(): Matches all variables.
+5. last_col(): Select last variable, possibly with an offset.
 
 ```{r}
-# Numeric columns : Relational operators : >, <=, != etc
+# Variables starting with "month"
+starts <- bank_df %>% select(starts_with("month"))
+
+# Variables ending with "type" 
+end <- bank_df %>% select(ends_with("type"))
+
+# Variable containing a string "since"
+contain <- bank_df %>% select(contains("since"))
+
+# Select the third last column
+last <- bank_df %>% select(last_col(offset = 2))
+
+```
+
+#### Select using logical expressions
+This uses the `select_if` statement in combination with wrappers such as `is_numeric`, `is.character` etc.
+```{r}
+## Select columns of type character
+char_data <- bank_df %>%
+  select_if(is.character)
+
+```
+
+There are several other variants of the `select` verb such as `select_at`, among others. I have attached a resource from which you learn about them.
+
+### Subsetting rows
+Here, the goal is to keep rows that are of interest e.g Keep non-missing rows.
+
+We will use the `filter` function from the `dplyr` package. I will also show the base R equivalent.
+
+#### Scenario 1 : Filter numeric columns
+The most common operators are [>, >=, <, <=, == and !=] - Relational operators
+Example: Keep rows where income is larger than 0
+
+* First, explore the income column
+```{r}
+summary(bank_df$Income)
+```
+
+* Drop those with zero income
+```{r}
+# Drop those with zero income
 out <- bank_df %>% filter(Income > 0)
 
-# Character columns
+# Distribution
+summary(out$Income)
+
+```
+
+* Using base R
+
+```{r}
+# Drop those with zero income
+out <- bank_df[bank_df$Income > 0, ]
+
+# Distribution
+summary(out$Income)
+
+```
+
+* Values within a specified range
+You can use functions such as `between` to accomplish this.
+Example : Filter those with incomes that lie between 20,000 and 30,000 (both inclusive)
+
+Using the `between` function
+```{r}
+# Filter
+out <- bank_df %>%
+  filter(between(Income, 20000, 30000))
+
+# Distribution
+summary(out$Income)
+
+```
+
+Using `base R`
+```{r}
+# Filter
+out <- bank_df[between(bank_df$Income, 20000, 30000), ]
+
+# Distribution
+summary(out$Income)
+
+```
+
+#### Subsetting character columns
+We will use the `Vehicle Class` column to demonstrate this
+
+```{r}
+unique(bank_df$`Vehicle Class`)
+```
+
+* Exact character match
+```{r}
+# Keep vehicles of class 'Sports Car'
 out <- bank_df %>%
   filter(`Vehicle Class` == "Sports Car")
 
-# More than one item
-out <- bank_df %>%
-  filter(`Vehicle Class` %in% c("Two-Door Car", "Four-Door Car"))
+# Distribution
+unique(out$`Vehicle Class`)
 
 ```
 
-Let's jump into today's session.
+* More than one vehicle class
+We can use the match operator (`%in%`) to accomplish this.
+Example : Keep vehicles of the following classes [Two-Door Car and Four-Door Car]
 
-# First session : Conditional statements
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(`Vehicle Class` %in% c("Two-Door Car", "Four-Door Car"))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+Suppose we want to eliminate the two car classes from the data. 
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(!`Vehicle Class` %in% c("Two-Door Car", "Four-Door Car"))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+* Using pattern matching functions.
+These are `grepl` from base R and `str_detect` from `stringr` package.
+
+First, find out the what is common between the groups you want to filter. In our case, the phrase `door` is common. 
+
+The functions will evaluate to boolean value (TRUE and FALSE) where rows with a TRUE value will be filtered.
+```{r}
+# Keep vehicles of class 'SUV'
+out <- bank_df %>%
+  filter(grepl("door", `Vehicle Class`, ignore.case = T))
+
+# Distribution
+unique(out$`Vehicle Class`)
+```
+
+#### Other filter extensions
+* Suppose you have multiple conditions
+Example 1: Keep those with more than two policies and have a `Sports` car [AND].
+
+```{r}
+# Keep vehicles of class 'Sports Car'
+out <- bank_df %>%
+  filter(`Vehicle Class` == "Sports Car", `Number of Policies` > 2)
+
+# Distribution
+unique(out$`Vehicle Class`)
+summary(out$`Number of Policies`)
+```
+
+Example 2 : Keep those with more than two policies or are male
+```{r}
+# Keep vehicles of class 'Sports Car'
+out <- bank_df %>%
+  filter(`Number of Policies` > 2 | Gender == "F")
+
+# Distribution
+unique(out$Gender)
+summary(out$`Number of Policies`)
+```
+
+
+* Filtering across multiple columns.
+Theare are several variants to the `filter` function that allow you to filter across multiple columns in one go.
+
+ + `filter_all()` : filter all columns based on certain conditions.
+ + `filter_if()` : use a function that returns a boolean to indicate which columns to filter on. 
+ + `filter_at()` : specify columns inside a vars() helper for which the filtering will be done.
+
+We will demostrate how to use the `filter_if` function only. I have attached some resources with which you can learn 
+
+Example : Filter numeric columns where all the variables have values above 4
+```{r}
+out <- bank_df %>%
+  filter_if(is.numeric, all_vars(. > 4))
+
+out
+```
+
+The `all_vars` is a wrapper equivalent to the AND logical operator. The equivalent for the OR operator is the `any_vars` wrapper.
+
+
+## Exercise
+We will use the marketing data set.
+1. Using the `Response` column, select all rows where the response is `Yes`
+2. Filter customers who are employed (`EmploymentStatus` = `Employed`) with an Income (`Income`) between 40,000 and 50,000
+3. Select all columns that start with an `e`
+
+Please take atmost 10 minutes to try this out. You can work individually or in a group.
+```{r}
+# 1. Using the `Response` column, select all rows where the response is `Yes`
+yes <- bank_df %>%
+  filter(Response == "Yes")
+
+# 2. Filter customers who are employed (`EmploymentStatus` = `Employed`) with an Income (`Income`) between 40,000 and 50,000
+df <- bank_df %>%
+  filter(EmploymentStatus == "Employed", between(Income, 20000, 30000))
+
+# 3. Select all columns that start with an `e`
+cols <- bank_df %>%
+  select(starts_with("E"))
+```
+
+
+# Second session : Conditional statements
 These are statements that control the flow of the analysis. That is, they determine if a certain condition is met or not, then perform a set of analysis depending on whether a condition is met or not.
 
 Below are examples of common conditional statements.
@@ -447,10 +741,13 @@ map_lst2 <- data_sheets %>%
 ## Exercise.
 Below is a function that takes in a variable name and ouputs its data type. Use `lapply` or `map` to apply function to all the column names in the marketing dataset. First create in function within your R workspace.
 
-```
+```{r}
 classes <- function(x){
   return(typeof(bank_df %>% pull(x)))
 }
+
+map(.x = names(bank_df),
+    .f = classes)
 ```
 
 # Closing remarks // Remarks
